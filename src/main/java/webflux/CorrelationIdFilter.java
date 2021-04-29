@@ -18,14 +18,18 @@ public class CorrelationIdFilter implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        logger.info("### Filter called");
         exchange.getResponse().beforeCommit(() -> Mono.deferContextual(ctx -> {
+            logger.info("### Setting response header");
             exchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER_NAME, ctx.get(CORRELATION_ID_HEADER_NAME));
             return Mono.empty();
         }));
 
         return chain.filter(exchange)
-                .contextWrite(ctx -> ctx.put(CORRELATION_ID_HEADER_NAME, UUID.randomUUID().toString()));
+                .contextWrite(ctx -> {
+                    String correlationId = UUID.randomUUID().toString();
+                    logger.info("### CorrelationId generated: {}", correlationId);
+                    return ctx.put(CORRELATION_ID_HEADER_NAME, correlationId);
+                });
     }
 
 }
